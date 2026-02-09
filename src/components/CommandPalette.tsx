@@ -32,6 +32,14 @@ const actionCommands = [
   { label: "Search Agents", icon: Search, action: "search-agents" },
 ];
 
+const researchCommands = [
+  { label: "AI Agent Risk Assessment Framework", icon: Search, description: "NIST AI RMF compliance patterns" },
+  { label: "MCP Protocol Security Analysis", icon: Search, description: "Tool-use attack vectors & mitigations" },
+  { label: "LLM Cost Optimization Strategies", icon: Search, description: "Token usage, caching, model routing" },
+  { label: "AI Governance Policy Templates", icon: Search, description: "Enterprise-grade policy documentation" },
+  { label: "Agent Orchestration Best Practices", icon: Search, description: "Multi-agent coordination patterns" },
+];
+
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
@@ -75,6 +83,21 @@ export function CommandPalette() {
             >
               <cmd.icon className="mr-2 h-4 w-4" />
               {cmd.label}
+            </CommandItem>
+          ))}
+        </CommandGroup>
+        <CommandSeparator />
+        <CommandGroup heading="Research & Insights">
+          {researchCommands.map((cmd) => (
+            <CommandItem
+              key={cmd.label}
+              onSelect={() => setOpen(false)}
+            >
+              <cmd.icon className="mr-2 h-4 w-4" />
+              <div className="flex flex-col">
+                <span>{cmd.label}</span>
+                <span className="text-xs text-muted-foreground">{cmd.description}</span>
+              </div>
             </CommandItem>
           ))}
         </CommandGroup>
