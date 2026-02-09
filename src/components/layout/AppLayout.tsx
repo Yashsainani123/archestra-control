@@ -16,9 +16,12 @@ export function AppLayout() {
               <span className="font-semibold text-sm tracking-wide">ARCHESTRA NEXUS</span>
             </div>
             <div className="ml-auto flex items-center gap-3">
-              <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-1 text-xs font-mono rounded border border-border bg-secondary text-muted-foreground">
+              <button
+                onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
+                className="hidden sm:inline-flex items-center gap-1 px-2 py-1 text-xs font-mono rounded border border-border bg-secondary text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer"
+              >
                 ⌘K
-              </kbd>
+              </button>
             </div>
           </header>
           <main className="flex-1 p-6 overflow-auto">
