@@ -2,24 +2,16 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getDiscovery, executeAction, type MCP_Server, type AI_Agent } from "@/services/serviceApi";
 import { motion } from "framer-motion";
-import { Search, Eye, Zap, AlertTriangle } from "lucide-react";
+import { Search, Eye, Zap } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { AgentInspectDialog, RiskTooltip } from "@/components/discovery/AgentInspectDialog";
+import { ServerInspectDialog } from "@/components/discovery/ServerInspectDialog";
+import { KillSwitchDialog } from "@/components/discovery/KillSwitchDialog";
 
 const riskColors: Record<string, string> = {
   low: "bg-success/10 text-success-val border-success/20",
@@ -43,11 +35,18 @@ function formatTimestamp(ts: string) {
 
 export default function DiscoveryDashboard() {
   const [search, setSearch] = useState("");
+  const [inspectAgent, setInspectAgent] = useState<AI_Agent | null>(null);
+  const [inspectServer, setInspectServer] = useState<MCP_Server | null>(null);
+  const [killTarget, setKillTarget] = useState<AI_Agent | null>(null);
+
   const { data, isLoading } = useQuery({ queryKey: ["discovery"], queryFn: getDiscovery });
-  
+
   const killMutation = useMutation({
     mutationFn: ({ agentId }: { agentId: string }) => executeAction("kill", agentId),
-    onSuccess: (res) => toast.error(res.message, { description: "Kill switch executed" }),
+    onSuccess: (res) => {
+      toast.error(res.message, { description: "Kill switch executed" });
+      setKillTarget(null);
+    },
   });
 
   if (isLoading || !data) {
@@ -89,7 +88,7 @@ export default function DiscoveryDashboard() {
                   <tr className="border-b border-border/50">
                     <th className="text-left p-4 text-xs text-muted-foreground uppercase tracking-wider font-medium">Agent</th>
                     <th className="text-left p-4 text-xs text-muted-foreground uppercase tracking-wider font-medium">Status</th>
-                    <th className="text-left p-4 text-xs text-muted-foreground uppercase tracking-wider font-medium">Risk</th>
+                    <th className="text-left p-4 text-xs text-muted-foreground uppercase tracking-wider font-medium flex items-center gap-1">Risk <RiskTooltip /></th>
                     <th className="text-left p-4 text-xs text-muted-foreground uppercase tracking-wider font-medium">Model</th>
                     <th className="text-left p-4 text-xs text-muted-foreground uppercase tracking-wider font-medium">Last Seen</th>
                     <th className="text-left p-4 text-xs text-muted-foreground uppercase tracking-wider font-medium">Cost/Day</th>
@@ -104,50 +103,22 @@ export default function DiscoveryDashboard() {
                         <div className="font-mono-id text-muted-foreground mt-0.5">{agent.id}</div>
                       </td>
                       <td className="p-4">
-                        <Badge variant="outline" className={`${statusColors[agent.status]} border-0 text-xs`}>
-                          {agent.status}
-                        </Badge>
+                        <Badge variant="outline" className={`${statusColors[agent.status]} border-0 text-xs`}>{agent.status}</Badge>
                       </td>
                       <td className="p-4">
-                        <Badge variant="outline" className={`${riskColors[agent.riskLevel]} text-xs`}>
-                          {agent.riskScore} — {agent.riskLevel}
-                        </Badge>
+                        <Badge variant="outline" className={`${riskColors[agent.riskLevel]} text-xs`}>{agent.riskScore} — {agent.riskLevel}</Badge>
                       </td>
                       <td className="p-4 font-mono-id">{agent.model}</td>
                       <td className="p-4 text-muted-foreground text-xs">{formatTimestamp(agent.lastSeen)}</td>
                       <td className="p-4 font-mono-id">${agent.costPerDay.toFixed(2)}</td>
                       <td className="p-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
+                          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setInspectAgent(agent)}>
                             <Eye className="h-3 w-3 mr-1" /> Inspect
                           </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-destructive hover:text-destructive">
-                                <Zap className="h-3 w-3 mr-1" /> Kill
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle className="flex items-center gap-2">
-                                  <AlertTriangle className="h-5 w-5 text-destructive" />
-                                  Terminate Agent: {agent.name}
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This will immediately terminate <span className="font-mono-id">{agent.id}</span> and revoke all access tokens. This action cannot be undone. All active sessions will be destroyed.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  onClick={() => killMutation.mutate({ agentId: agent.id })}
-                                >
-                                  Execute Kill Switch
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-destructive hover:text-destructive" onClick={() => setKillTarget(agent)}>
+                            <Zap className="h-3 w-3 mr-1" /> Kill
+                          </Button>
                         </div>
                       </td>
                     </motion.tr>
@@ -166,11 +137,12 @@ export default function DiscoveryDashboard() {
                   <tr className="border-b border-border/50">
                     <th className="text-left p-4 text-xs text-muted-foreground uppercase tracking-wider font-medium">Server</th>
                     <th className="text-left p-4 text-xs text-muted-foreground uppercase tracking-wider font-medium">Status</th>
-                    <th className="text-left p-4 text-xs text-muted-foreground uppercase tracking-wider font-medium">Risk</th>
+                    <th className="text-left p-4 text-xs text-muted-foreground uppercase tracking-wider font-medium flex items-center gap-1">Risk <RiskTooltip /></th>
                     <th className="text-left p-4 text-xs text-muted-foreground uppercase tracking-wider font-medium">Region</th>
                     <th className="text-left p-4 text-xs text-muted-foreground uppercase tracking-wider font-medium">Agents</th>
                     <th className="text-left p-4 text-xs text-muted-foreground uppercase tracking-wider font-medium">Tools</th>
                     <th className="text-left p-4 text-xs text-muted-foreground uppercase tracking-wider font-medium">Last Seen</th>
+                    <th className="text-right p-4 text-xs text-muted-foreground uppercase tracking-wider font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -190,6 +162,11 @@ export default function DiscoveryDashboard() {
                       <td className="p-4">{server.connectedAgents}</td>
                       <td className="p-4">{server.toolsExposed}</td>
                       <td className="p-4 text-muted-foreground text-xs">{formatTimestamp(server.lastSeen)}</td>
+                      <td className="p-4 text-right">
+                        <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setInspectServer(server)}>
+                          <Eye className="h-3 w-3 mr-1" /> Inspect
+                        </Button>
+                      </td>
                     </motion.tr>
                   ))}
                 </tbody>
@@ -198,6 +175,17 @@ export default function DiscoveryDashboard() {
           </motion.div>
         </TabsContent>
       </Tabs>
+
+      {/* Dialogs */}
+      <AgentInspectDialog agent={inspectAgent} open={!!inspectAgent} onOpenChange={(v) => !v && setInspectAgent(null)} />
+      <ServerInspectDialog server={inspectServer} open={!!inspectServer} onOpenChange={(v) => !v && setInspectServer(null)} />
+      <KillSwitchDialog
+        agent={killTarget}
+        open={!!killTarget}
+        onOpenChange={(v) => !v && setKillTarget(null)}
+        onConfirm={(id) => killMutation.mutate({ agentId: id })}
+        isPending={killMutation.isPending}
+      />
     </motion.div>
   );
 }

@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 
 const navCommands = [
-  { label: "Executive Overview", icon: LayoutDashboard, path: "/" },
+  { label: "Executive Overview", icon: LayoutDashboard, path: "/dashboard" },
   { label: "Discovery & Governance", icon: Radar, path: "/discovery" },
   { label: "Security Command", icon: ShieldAlert, path: "/security" },
   { label: "Cost Intelligence", icon: DollarSign, path: "/cost" },
