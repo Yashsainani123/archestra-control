@@ -113,12 +113,15 @@ export async function getCostAnalytics(): Promise<Cost_Analytics> {
   return mockCostAnalytics;
 }
 
-export async function executeAction(actionType: string, agentId: string): Promise<{ success: boolean; message: string }> {
+export async function executeAction(actionType: string, targetId: string): Promise<{ success: boolean; message: string }> {
   await delay(800);
   if (actionType === "kill") {
-    return { success: true, message: `Kill switch executed for ${agentId}. Agent terminated. All access tokens revoked.` };
+    return { success: true, message: `Kill switch executed for ${targetId}. Target terminated. All access tokens revoked.` };
   }
-  return { success: true, message: `Action "${actionType}" executed on ${agentId}.` };
+  if (actionType === "quarantine") {
+    return { success: true, message: `Quarantine enacted for ${targetId}. All inbound connections blocked. Agent bindings severed.` };
+  }
+  return { success: true, message: `Action "${actionType}" executed on ${targetId}.` };
 }
 
 export async function getAuditLog(): Promise<Audit_Log_Event[]> {
